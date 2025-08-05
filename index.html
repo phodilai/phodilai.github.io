@@ -105,22 +105,27 @@
         </div>
     </div>
 
-    <!-- Hộp thoại tùy chỉnh (Customization Modal) -->
-    <div id="customizationModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" id="closeCustomizationModal">&times;</span>
-            <h3 id="customizationItemName"></h3>
-            <div class="customization-options">
-                <h4>Đường</h4>
-                <div id="sugarOptions" class="options-group"></div>
-                <h4>Đá</h4>
-                <div id="iceOptions" class="options-group"></div>
-                <h4>Topping</h4>
-                <div id="toppingOptions" class="options-group"></div>
-            </div>
-            <button id="addToCartModalBtn">Thêm vào giỏ</button>
-        </div>
+<!-- Hộp thoại tùy chỉnh (Customization Modal) -->
+<div id="customizationModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" id="closeCustomizationModal">&times;</span>
+    <h3 id="customizationItemName"></h3>
+    <div class="customization-options">
+      <h4>Đường</h4>
+      <div id="sugarOptions" class="options-group"></div>
+      <h4>Đá</h4>
+      <div id="iceOptions" class="options-group"></div>
+      <h4>Topping</h4>
+      <div id="toppingOptions" class="options-group"></div>
+      <h4>Số lượng</h4>
+      <div class="quantity-group">
+        <input type="number" id="custom-quantity" min="1" value="1">
+      </div>
     </div>
+    <button id="addToCartModalBtn">Thêm vào giỏ</button>
+  </div>
+</div>
+
 
     <!-- Hộp thoại đặt hàng (Order Modal) -->
     <div id="orderModal" class="modal">
@@ -138,3 +143,4 @@
     <script type="module" src="script-client.js"></script>
 </body>
 </html>
+
