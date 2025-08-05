@@ -60,28 +60,47 @@ function showCustomizationModal(item) {
     currentCustomizingItem = item;
     const modal = document.getElementById('customizationModal');
     document.getElementById('customizationItemName').innerText = currentCustomizingItem.name;
-    
-    const sugarOptionsDiv = document.getElementById('sugarOptions');
-    sugarOptionsDiv.innerHTML = `
-        <p>Đường:</p>
-        ${customizationOptions.sugar.map(level => `
-            <label>
-                <input type="radio" name="sugar" value="${level}" ${level === 100 ? 'checked' : ''}>
-                ${level}%
-            </label>
-        `).join('')}
-    `;
 
+    const sugarOptionsDiv = document.getElementById('sugarOptions');
     const iceOptionsDiv = document.getElementById('iceOptions');
-    iceOptionsDiv.innerHTML = `
-        <p>Đá:</p>
-        ${customizationOptions.ice.map(level => `
-            <label>
-                <input type="radio" name="ice" value="${level}" ${level === 100 ? 'checked' : ''}>
-                ${level}%
-            </label>
-        `).join('')}
-    `;
+
+    // Kiểm tra nếu là các món không có tùy chọn đường và đá
+    const itemsWithoutSugarIce = ["Trà Đá", "Bim Bim", "Cay Cay", "Thăng Long Cứng", "Hướng Dương"];
+    const hideSugarIce = itemsWithoutSugarIce.includes(currentCustomizingItem.name);
+
+    if (hideSugarIce) {
+        sugarOptionsDiv.style.display = 'none';
+        iceOptionsDiv.style.display = 'none';
+    } else {
+        sugarOptionsDiv.style.display = 'block';
+        iceOptionsDiv.style.display = 'block';
+
+        // Render đường
+        sugarOptionsDiv.innerHTML = `
+            <p>Đường:</p>
+            ${customizationOptions.sugar.map(level => `
+                <label>
+                    <input type="radio" name="sugar" value="${level}" ${level === 100 ? 'checked' : ''}>
+                    ${level}%
+                </label>
+            `).join('')}
+        `;
+
+        // Render đá
+        iceOptionsDiv.innerHTML = `
+            <p>Đá:</p>
+            ${customizationOptions.ice.map(level => `
+                <label>
+                    <input type="radio" name="ice" value="${level}" ${level === 100 ? 'checked' : ''}>
+                    ${level}%
+                </label>
+            `).join('')}
+        `;
+    }
+
+    modal.style.display = 'block';
+}
+
 
     const toppingOptionsDiv = document.getElementById('toppingOptions');
     toppingOptionsDiv.innerHTML = '';
