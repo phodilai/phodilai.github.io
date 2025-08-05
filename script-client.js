@@ -60,28 +60,36 @@ function showCustomizationModal(item) {
     currentCustomizingItem = item;
     const modal = document.getElementById('customizationModal');
     document.getElementById('customizationItemName').innerText = currentCustomizingItem.name;
-    
-    const sugarOptionsDiv = document.getElementById('sugarOptions');
-    sugarOptionsDiv.innerHTML = `
-        <p>Đường:</p>
-        ${customizationOptions.sugar.map(level => `
-            <label>
-                <input type="radio" name="sugar" value="${level}" ${level === 100 ? 'checked' : ''}>
-                ${level}%
-            </label>
-        `).join('')}
-    `;
 
+    const excludedItems = ['Trà Đá', 'Bim Bim', 'Cay Cay', 'Thăng Long Cứng', 'Hướng Dương'];
+
+    const sugarOptionsDiv = document.getElementById('sugarOptions');
     const iceOptionsDiv = document.getElementById('iceOptions');
-    iceOptionsDiv.innerHTML = `
-        <p>Đá:</p>
-        ${customizationOptions.ice.map(level => `
-            <label>
-                <input type="radio" name="ice" value="${level}" ${level === 100 ? 'checked' : ''}>
-                ${level}%
-            </label>
-        `).join('')}
-    `;
+
+    if (excludedItems.includes(currentCustomizingItem.name)) {
+        sugarOptionsDiv.innerHTML = '';
+        iceOptionsDiv.innerHTML = '';
+    } else {
+        sugarOptionsDiv.innerHTML = `
+            <p>Đường:</p>
+            ${customizationOptions.sugar.map(level => `
+                <label>
+                    <input type="radio" name="sugar" value="${level}" ${level === 100 ? 'checked' : ''}>
+                    ${level}%
+                </label>
+            `).join('')}
+        `;
+
+        iceOptionsDiv.innerHTML = `
+            <p>Đá:</p>
+            ${customizationOptions.ice.map(level => `
+                <label>
+                    <input type="radio" name="ice" value="${level}" ${level === 100 ? 'checked' : ''}>
+                    ${level}%
+                </label>
+            `).join('')}
+        `;
+    }
 
     const toppingOptionsDiv = document.getElementById('toppingOptions');
     toppingOptionsDiv.innerHTML = '';
@@ -97,8 +105,15 @@ function showCustomizationModal(item) {
         `;
     }
 
+    const quantityDiv = document.getElementById('quantityGroup');
+    quantityDiv.innerHTML = `
+        <label for="custom-quantity">Số lượng:</label>
+        <input type="number" id="custom-quantity" min="1" value="1">
+    `;
+
     modal.style.display = 'flex';
 }
+
 
 function closeCustomizationModal() {
     document.getElementById('customizationModal').style.display = 'none';
