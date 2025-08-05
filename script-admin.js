@@ -1,33 +1,29 @@
 import { db } from './firebase-config.js';
-import { collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Lấy các phần tử container từ file admin.html của bạn
+// Lấy các phần tử container từ admin.html
 const pendingOrdersDiv = document.getElementById('pendingOrders');
 const completedOrdersDiv = document.getElementById('completedOrders');
 const archivedOrdersDiv = document.getElementById('archivedOrders');
 const deletedOrdersDiv = document.getElementById('deletedOrders');
 const revenueDiv = document.getElementById('dailyRevenue');
-
 const toggleDeletedBtn = document.getElementById('toggleDeletedBtn');
 const deletedOrdersSection = document.getElementById('deletedOrdersSection');
 
 let orders = [];
 
-// Lắng nghe sự thay đổi của collection "orders" theo thời gian thực
+// Theo dõi đơn hàng từ Firebase Firestore
 onSnapshot(collection(db, "orders"), (querySnapshot) => {
     orders = [];
     querySnapshot.forEach((doc) => {
         orders.push({ id: doc.id, ...doc.data() });
     });
-    
     renderAll();
 }, (error) => {
     console.error("Lỗi khi lắng nghe đơn hàng:", error);
 });
 
-// Hàm chính để render lại toàn bộ giao diện
 function renderAll() {
-    // Sắp xếp đơn hàng theo thời gian tạo mới nhất
     const sortedOrders = orders.sort((a, b) => {
         const dateA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
         const dateB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
@@ -38,15 +34,12 @@ function renderAll() {
     renderDailyRevenue(calculateDailyRevenue(orders));
 }
 
-// Hàm render đơn hàng vào đúng các container
 function renderOrdersByStatus(allOrders) {
-    // Xóa nội dung cũ
     pendingOrdersDiv.innerHTML = '';
     completedOrdersDiv.innerHTML = '';
     archivedOrdersDiv.innerHTML = '';
     deletedOrdersDiv.innerHTML = '';
 
-    // Lọc và render đơn hàng vào đúng container
     allOrders.forEach(order => {
         if (order.status === 'Đang chờ xử lý' || order.status === 'Đang chuẩn bị') {
             pendingOrdersDiv.innerHTML += createOrderHtml(order, 'Đã hoàn thành', 'Đã hoàn thành', !order.isPaid);
@@ -67,7 +60,7 @@ function createOrderHtml(order, buttonText = '', action = '', showPaidBtn = fals
             : '';
         return `<li>${item.name}${customizationString} x ${item.quantity}</li>`;
     }).join('');
-    
+
     const createdTime = order.createdAt ? (order.createdAt.toDate ? order.createdAt.toDate().toLocaleString('vi-VN') : new Date(order.createdAt).toLocaleString('vi-VN')) : 'Không rõ';
 
     let customerInfo = '';
@@ -81,7 +74,14 @@ function createOrderHtml(order, buttonText = '', action = '', showPaidBtn = fals
                             <strong>Địa chỉ:</strong> ${order.customerInfo.address}`;
         }
     }
-    
+
+    const paidStatusHtml = order.isPaid ? `<p style="color: #27ae60; font-weight: bold; margin-top: 10px;">Đã thanh toán</p>` : '';
+
+    let blinkingText = '';
+    if (order.customerInfo?.type === 'Uống tại chỗ' && !order.isPaid && (order.status === 'Đã hoàn thành' || order.status === 'Đang chuẩn bị')) {
+        blinkingText = `<p class="blinking-text">(Chưa thanh toán)</p>`;
+    }
+
     let actionsHtml = '';
     if (action) {
         actionsHtml += `<button class="status-btn" data-id="${order.id}" data-status="${action}">${buttonText}</button>`;
@@ -89,40 +89,38 @@ function createOrderHtml(order, buttonText = '', action = '', showPaidBtn = fals
     if (showPaidBtn) {
         actionsHtml += `<button class="payment-btn" data-id="${order.id}">Đã thanh toán</button>`;
     }
-    
-    const paidStatusHtml = order.isPaid ? `<p style="color: #27ae60; font-weight: bold; margin-top: 10px;">Đã thanh toán</p>` : '';
-    
-    let blinkingText = '';
-    if (order.customerInfo.type === 'Uống tại chỗ' && !order.isPaid && (order.status === 'Đã hoàn thành' || order.status === 'Đang chuẩn bị')) {
-        blinkingText = `<p class="blinking-text">(Chưa thanh toán)</p>`;
-    }
 
     return `
-        <div class="order-item">
+        <div class="order-item" data-id="${order.id}">
             <div class="order-details">
                 <p><strong>Thời gian tạo:</strong> ${createdTime}</p>
                 <p>${customerInfo}</p>
                 <p><strong>Ghi chú:</strong> ${order.note || 'Không có'}</p>
-                <p><strong>Các món:</strong></p>
-                <ul>${itemsList}</ul>
                 <p><strong>Tổng tiền:</strong> ${order.totalPrice.toLocaleString('vi-VN')} VNĐ</p>
             </div>
+
             ${paidStatusHtml}
             ${blinkingText}
+
             <div class="order-actions">
                 ${actionsHtml}
+                <button class="toggle-items-btn">Hiển thị món</button>
+                <button class="edit-items-btn">Chỉnh sửa món</button>
+            </div>
+
+            <div class="order-items" style="display: none; margin-top: 10px;">
+                <p><strong>Các món:</strong></p>
+                <ul>${itemsList}</ul>
             </div>
         </div>
     `;
 }
 
-// Hàm tính toán doanh thu theo ngày
 function calculateDailyRevenue(orders) {
     const revenueByDate = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Lọc các đơn hàng đã thanh toán và đã được lưu trữ (archived)
     const paidArchivedOrders = orders.filter(order => order.isPaid && order.status === 'Đã lưu trữ');
 
     paidArchivedOrders.forEach(order => {
@@ -134,16 +132,16 @@ function calculateDailyRevenue(orders) {
 
         if (diffDays <= 3) {
             const dateString = orderDate.toLocaleDateString('vi-VN');
-            if (!revenueByDate.hasOwnProperty(dateString)) {
+            if (!revenueByDate[dateString]) {
                 revenueByDate[dateString] = 0;
             }
             revenueByDate[dateString] += order.totalPrice;
         }
     });
+
     return revenueByDate;
 }
 
-// Hàm render doanh thu
 function renderDailyRevenue(revenueData) {
     revenueDiv.innerHTML = '';
     const sortedDates = Object.keys(revenueData).sort((a, b) => {
@@ -152,6 +150,8 @@ function renderDailyRevenue(revenueData) {
         return dateB - dateA;
     });
 
+    let total = 0;
+
     if (sortedDates.length === 0) {
         revenueDiv.innerHTML = '<p>Không có dữ liệu doanh thu trong 3 ngày gần nhất.</p>';
         return;
@@ -159,17 +159,23 @@ function renderDailyRevenue(revenueData) {
 
     sortedDates.forEach(date => {
         const revenue = revenueData[date];
-        const revenueHtml = `
+        total += revenue;
+        revenueDiv.innerHTML += `
             <div class="revenue-item">
                 <h3>Ngày: ${date}</h3>
                 <p>Tổng doanh thu: ${revenue.toLocaleString('vi-VN')} VNĐ</p>
             </div>
         `;
-        revenueDiv.innerHTML += revenueHtml;
     });
+
+    revenueDiv.innerHTML += `
+        <div class="revenue-item" style="font-weight:bold; color:#2c3e50;">
+            <h3>Tổng doanh thu 3 ngày:</h3>
+            <p>${total.toLocaleString('vi-VN')} VNĐ</p>
+        </div>
+    `;
 }
 
-// Hàm cập nhật trạng thái đơn hàng
 async function updateOrderStatus(orderId, status) {
     const orderRef = doc(db, "orders", orderId);
     try {
@@ -179,7 +185,6 @@ async function updateOrderStatus(orderId, status) {
     }
 }
 
-// Hàm cập nhật trạng thái thanh toán
 async function updateOrderPaymentStatus(orderId, isPaid) {
     const orderRef = doc(db, "orders", orderId);
     try {
@@ -189,21 +194,28 @@ async function updateOrderPaymentStatus(orderId, isPaid) {
     }
 }
 
-// Lắng nghe sự kiện click trên toàn bộ trang
 document.addEventListener('click', (e) => {
     if (e.target && e.target.matches('.status-btn')) {
         const orderId = e.target.dataset.id;
         const status = e.target.dataset.status;
-        updateOrderStatus(orderId, status);
+
+        let confirmMsg = "Bạn có chắc chắn muốn thay đổi trạng thái đơn này?";
+        if (status === 'Đã xóa') confirmMsg = "Bạn có chắc chắn muốn xóa đơn này?";
+        if (status === 'Đã lưu trữ') confirmMsg = "Bạn có muốn lưu trữ đơn này?";
+        if (status === 'Đang chờ xử lý') confirmMsg = "Khôi phục đơn này?";
+
+        if (confirm(confirmMsg)) {
+            updateOrderStatus(orderId, status);
+        }
     }
-    
+
     if (e.target && e.target.matches('.payment-btn')) {
         const orderId = e.target.dataset.id;
         if (confirm("Bạn có chắc chắn khách đã thanh toán không?")) {
             updateOrderPaymentStatus(orderId, true);
         }
     }
-    
+
     if (e.target && e.target.id === 'toggleDeletedBtn') {
         if (deletedOrdersSection.style.display === 'none') {
             deletedOrdersSection.style.display = 'block';
@@ -212,5 +224,23 @@ document.addEventListener('click', (e) => {
             deletedOrdersSection.style.display = 'none';
             toggleDeletedBtn.innerText = 'Hiện Đơn đã xóa';
         }
+    }
+
+    if (e.target && e.target.classList.contains('toggle-items-btn')) {
+        const orderItem = e.target.closest('.order-item');
+        const itemsDiv = orderItem.querySelector('.order-items');
+        if (itemsDiv.style.display === 'none') {
+            itemsDiv.style.display = 'block';
+            e.target.textContent = 'Ẩn món';
+        } else {
+            itemsDiv.style.display = 'none';
+            e.target.textContent = 'Hiển thị món';
+        }
+    }
+
+    if (e.target && e.target.classList.contains('edit-items-btn')) {
+        const orderId = e.target.closest('.order-item').dataset.id;
+        alert(`Chức năng chỉnh sửa đơn ${orderId} đang được phát triển.`);
+        // Có thể mở modal tại đây nếu muốn
     }
 });
