@@ -107,28 +107,42 @@ function closeCustomizationModal() {
 
 function addToCartFromModal() {
     if (!currentCustomizingItem) return;
-    
-    const selectedSugar = document.querySelector('input[name="sugar"]:checked').value;
-    const selectedIce = document.querySelector('input[name="ice"]:checked').value;
+
+    const selectedSugar = parseInt(document.querySelector('input[name="sugar"]:checked').value);
+    const selectedIce = parseInt(document.querySelector('input[name="ice"]:checked').value);
     const selectedToppings = Array.from(document.querySelectorAll('input[name="topping"]:checked')).map(cb => ({
         name: cb.value,
         price: parseInt(cb.dataset.price)
     }));
 
     const toppingPrice = selectedToppings.reduce((total, topping) => total + topping.price, 0);
-    const itemWithCustomization = {
-        ...currentCustomizingItem,
-        quantity: 1,
-        sugar: `${selectedSugar}%`,
-        ice: `${selectedIce}%`,
-        toppings: selectedToppings,
-        price: currentCustomizingItem.price + toppingPrice
-    };
+    const finalPrice = currentCustomizingItem.price + toppingPrice;
 
-    cart.push(itemWithCustomization);
+    // Kiểm tra nếu món giống nhau (id, đường, đá, topping) thì cộng số lượng
+    const existingIndex = cart.findIndex(item =>
+        item.id === currentCustomizingItem.id &&
+        item.sugar === selectedSugar &&
+        item.ice === selectedIce &&
+        JSON.stringify(item.toppings) === JSON.stringify(selectedToppings)
+    );
+
+    if (existingIndex !== -1) {
+        cart[existingIndex].quantity += 1;
+    } else {
+        cart.push({
+            ...currentCustomizingItem,
+            quantity: 1,
+            sugar: selectedSugar,
+            ice: selectedIce,
+            toppings: selectedToppings,
+            price: finalPrice
+        });
+    }
+
     renderCart();
     closeCustomizationModal();
 }
+
 
 function renderCart() {
     const cartDiv = document.getElementById('cart');
