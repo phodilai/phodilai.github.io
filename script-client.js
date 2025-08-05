@@ -145,8 +145,10 @@ function renderCart() {
             emptyCartMessage.style.display = 'none';
         }
         cart.forEach((item, index) => {
-            const itemTotal = item.price * item.quantity;
+            const toppingCost = item.toppings?.reduce((sum, t) => sum + t.price, 0) || 0;
+            const itemTotal = (item.price + toppingCost) * item.quantity;
             totalPrice += itemTotal;
+
             
             let customizationString = '';
             if (item.sugar || item.ice || (item.toppings && item.toppings.length > 0)) {
@@ -154,23 +156,34 @@ function renderCart() {
                 customizationString = ` (${item.sugar} đường, ${item.ice} đá${toppingsNames ? `, Topping: ${toppingsNames}` : ''})`;
             }
 
-            const cartItemHtml = `
-                <div class="cart-item">
-                    <div class="order-details">
-                        <span>${item.name}${customizationString}</span>
-                        <br>
-                        <span>${item.price.toLocaleString('vi-VN')} VNĐ x ${item.quantity}</span>
-                    </div>
-                    <div class="order-actions">
-                        <button class="decrease-quantity-btn" data-index="${index}">-</button>
-                        <span>${item.quantity}</span>
-                        <button class="increase-quantity-btn" data-index="${index}">+</button>
-                        <button class="remove-from-cart-btn" data-index="${index}">Xóa</button>
-                    </div>
-                </div>
-            `;
-            cartDiv.innerHTML += cartItemHtml;
-        });
+cart.forEach((item, index) => {
+    // 👉 Tạo phần hiển thị tùy chỉnh
+    const toppingsNames = item.toppings?.map(t => t.name).join(', ') || '';
+    const sugarText = item.sugar !== undefined ? `${item.sugar}% đường` : '';
+    const iceText = item.ice !== undefined ? `${item.ice}% đá` : '';
+    const toppingText = toppingsNames ? `Topping: ${toppingsNames}` : '';
+    const customText = [sugarText, iceText, toppingText].filter(Boolean).join(', ');
+    const customizationString = customText ? ` (${customText})` : '';
+
+    // 👉 Tạo HTML giỏ hàng
+    const cartItemHtml = `
+        <div class="cart-item">
+            <div class="order-details">
+                <span>${item.name}${customizationString}</span>
+                <br>
+                <span>${item.price.toLocaleString('vi-VN')} VNĐ x ${item.quantity} = ${(item.price * item.quantity).toLocaleString('vi-VN')} VNĐ</span>
+            </div>
+            <div class="order-actions">
+                <button class="decrease-quantity-btn" data-index="${index}">-</button>
+                <span>${item.quantity}</span>
+                <button class="increase-quantity-btn" data-index="${index}">+</button>
+                <button class="remove-from-cart-btn" data-index="${index}">Xóa</button>
+            </div>
+        </div>
+    `;
+    cartDiv.innerHTML += cartItemHtml;
+});
+
     }
     document.getElementById('totalPrice').innerText = totalPrice.toLocaleString('vi-VN');
 
