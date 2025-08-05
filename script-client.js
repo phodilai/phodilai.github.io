@@ -291,7 +291,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('submitOrderBtn').addEventListener('click', submitOrder);
     
-    document.getElementById('addToCartModalBtn').addEventListener('click', addToCartFromModal);
+    document.getElementById('addToCartModalBtn').addEventListener('click', addToCartFromModal) => {
+    const selectedSugar = document.querySelector('input[name="sugar"]:checked')?.value || '100';
+    const selectedIce = document.querySelector('input[name="ice"]:checked')?.value || '100';
+    const selectedToppings = Array.from(document.querySelectorAll('input[name="topping"]:checked'))
+        .map(el => ({
+            name: el.value,
+            price: parseInt(el.getAttribute('data-price'))
+        }));
+
+    const quantity = parseInt(document.getElementById('custom-quantity').value) || 1;
+
+    const customizedItem = {
+        ...currentCustomizingItem,
+        sugar: selectedSugar,
+        ice: selectedIce,
+        toppings: selectedToppings,
+        quantity: quantity
+    };
+
+    addToCart(customizedItem);
+    closeCustomizationModal();
+});
     
     document.getElementById('closeCustomizationModal').addEventListener('click', closeCustomizationModal);
     document.getElementById('closeOrderModal').addEventListener('click', closeOrderModal);
