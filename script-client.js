@@ -296,3 +296,19 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('closeCustomizationModal').addEventListener('click', closeCustomizationModal);
     document.getElementById('closeOrderModal').addEventListener('click', closeOrderModal);
 });
+// Gửi thông báo đến admin
+fetch("https://fcm.googleapis.com/fcm/send", {
+    method: "POST",
+    headers: {
+        "Authorization": "BJXPaiZL-lYNsbU_u59EnHXFq4o6eb2QvaNpNGVzY9NxhUNhLJmMFN46iuXPJNyFIfWOroXYblJ4HiClDoUA6ic",  // Thay bằng server key từ Firebase
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+        to: "/topics/admin",
+        notification: {
+            title: "Đơn hàng mới",
+            body: "Bạn có đơn hàng mới cần xử lý!",
+            icon: "/icon.png"
+        }
+    })
+});
